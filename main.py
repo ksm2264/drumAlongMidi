@@ -50,12 +50,15 @@ while True:
         print(msg)
         msglog.append({"msg": msg, "due": time.time(), "rect": pygame.Rect(500,(msg.dict()['note']-21)/30*400+50,5,10)})
         pygame.draw.rect(screen,(0,0,0),msglog[-1]['rect'])
-        pygame.display.flip()
+        
    # while len(msglog) > 0 and msglog[0]["due"] <= time.time():
         #outport.send(msglog.popleft()["msg"])
     if len(msglog)>0:
-        while msglog[0]["due"]+10<time.time():
-            msglog.popleft()
+        try:
+            while msglog[0]["due"]+10<time.time():
+                msglog.popleft()
+        except:
+            print('caught exception during queue popping')
     for thisMsg in msglog:
         thisMsg['rect'].move_ip(-(time.time()-timeNow)/10*500,0)
         pygame.draw.rect(screen,(0,0,0),thisMsg['rect'])
