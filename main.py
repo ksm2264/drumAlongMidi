@@ -48,7 +48,7 @@ logThis = list()
 
 import copy
 
-mid = mido.MidiFile('Jazz5.mid')
+mid = mido.MidiFile('Jazz12.mid')
 
 all_msg = []
 
@@ -67,7 +67,8 @@ unique_notes = [msg.note for msg in all_msg]
 import numpy as np
 
 unique_notes = list(np.unique(unique_notes))
-unique_notes+=[40,48,49,45,43,44]
+unique_notes+=[46,40,48,49,45,43,44]
+unique_notes = list(np.unique(unique_notes))
 lastStart = time.time()
 
 
@@ -87,7 +88,10 @@ sound_sender = deque()
 
 y_pos = (time_on_screen-draw_delay)/time_on_screen*800
 
-precision_level_seconds = 0.05
+precision_level_seconds_perfect = 0.025
+precision_level_seconds_acceptable = 0.05
+
+toggled_off = []
 
 while len(all_msg)>0:
     
@@ -124,7 +128,7 @@ while len(all_msg)>0:
             this_pos = unique_notes.index(this_note)
             
 #            this_msg = {"msg": msg, "due": time.time(), "rect": pygame.Rect(this_pos/len(unique_notes)*600+50,800,50,20)} 
-            this_msg = {"msg": msg, "due": time.time(), "circ": {'horiz':this_pos/len(unique_notes)*600+50}, "hit":False} 
+            this_msg = {"msg": msg, "due": time.time(), "circ": {'horiz':this_pos/len(unique_notes)*600+50}, "hit":'no'} 
             msglog.append(this_msg)
             
             sound_sender.append([msg,time.time()])
@@ -147,10 +151,14 @@ while len(all_msg)>0:
         newPosY = scaleFac*800
         #thisMsg['rect'].update(thisRect.left,newPosY,50*scaleFac,20*scaleFac)
         
-        if not thisMsg['hit']:
+        if thisMsg['hit']=='no':
             drawColor = (0,0,0)
-        else:
+        elif thisMsg['hit']=='perfect':
             drawColor = (0,255,0)
+        elif thisMsg['hit']=='slow':
+            drawColor = (255,0,255)
+        elif thisMsg['hit']=='fast':
+            drawColor = (0,0,255)
 
         pygame.draw.circle(screen,drawColor,(thisMsg['circ']['horiz'],newPosY),22)
 
@@ -184,11 +192,15 @@ while len(all_msg)>0:
             
             targ_info = [[idx,msg['due']+draw_delay-thisMsg['due']] for idx,msg in enumerate(msglog) if msg['msg'].note==this_note]
             
-            mod_this = [val[0] for val in targ_info if abs(val[1]<precision_level_seconds)]
+            mod_this = [val for val in targ_info if abs(val[1])<precision_level_seconds_acceptable]
             
             if mod_this:
-                msglog[mod_this[0]]['hit']=True
-        
+                if abs(mod_this[0][1])<precision_level_seconds_perfect:
+                    msglog[mod_this[0][0]]['hit']='perfect'
+                elif mod_this[0][1]>0:
+                    msglog[mod_this[0][0]]['hit']='slow'
+                elif mod_this[0][1]<0:
+                    msglog[mod_this[0][0]]['hit']='fast'
     try:
         while msglog_input[0]["due"]+draw_input_time<time.time():
             msglog_input.popleft()
