@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 #%%
 import pygame
 
+from my_game_utils import toggleChannels
+
 background_colour = (255,255,255)
 (width, height) = (700, 1000)
 
@@ -91,7 +93,18 @@ y_pos = (time_on_screen-draw_delay)/time_on_screen*800
 precision_level_seconds_perfect = 0.025
 precision_level_seconds_acceptable = 0.05
 
-toggled_off = []
+channel_enabled = [True]*len(unique_notes)
+
+button_bb = []
+
+for notes in unique_notes:
+    
+    
+    x_cen = unique_notes.index(notes)/len(unique_notes)*600+50
+    y_cen = 950
+    
+    button_bb.append((x_cen-25,x_cen+25,y_cen-25,y_cen+25))
+    
 
 while len(all_msg)>0:
     
@@ -99,10 +112,16 @@ while len(all_msg)>0:
     pygame.display.flip()
     screen.fill(background_colour)
     
-    for notes in unique_notes:
+    for idx,notes in enumerate(unique_notes):
         pygame.draw.circle(screen,(255,0,0),(unique_notes.index(notes)/len(unique_notes)*600+50,y_pos),25,2)
 
-    
+        if channel_enabled[idx]:
+            drawWidth = 0
+        else:
+            drawWidth = 2
+            
+        pygame.draw.circle(screen,(122,122,0),(unique_notes.index(notes)/len(unique_notes)*600+50,950),25,drawWidth)
+
     if len(sound_sender)>0:
         sound = sound_sender[0]
         if timeNow-sound[1]>=draw_delay:
@@ -120,18 +139,19 @@ while len(all_msg)>0:
         
         if msg.velocity!=0:
             
-            print(msg)
-            logThis.append(msg)
+            #print(msg)
             
             this_note = msg.dict()['note']
             
             this_pos = unique_notes.index(this_note)
             
 #            this_msg = {"msg": msg, "due": time.time(), "rect": pygame.Rect(this_pos/len(unique_notes)*600+50,800,50,20)} 
-            this_msg = {"msg": msg, "due": time.time(), "circ": {'horiz':this_pos/len(unique_notes)*600+50}, "hit":'no'} 
-            msglog.append(this_msg)
             
-            sound_sender.append([msg,time.time()])
+            if channel_enabled[this_pos]:
+                this_msg = {"msg": msg, "due": time.time(), "circ": {'horiz':this_pos/len(unique_notes)*600+50}, "hit":'no'} 
+                msglog.append(this_msg)
+                
+                sound_sender.append([msg,time.time()])
             
         lastStart = time.time()
             
@@ -205,7 +225,17 @@ while len(all_msg)>0:
         while msglog_input[0]["due"]+draw_input_time<time.time():
             msglog_input.popleft()
     except:
-        print('caught exception during queue popping')
+        pass
             
+    for ev in pygame.event.get():
         
+        if ev.type==pygame.QUIT:
+            pygame.quit()
+            
+        if ev.type == pygame.MOUSEBUTTONDOWN:
+            
+            mouse = pygame.mouse.get_pos()
+            
+            channel_enabled = toggleChannels(channel_enabled,mouse,button_bb)
+            
         
