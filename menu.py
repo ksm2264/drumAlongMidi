@@ -1,10 +1,71 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Dec 20 17:40:16 2019
+Created on Mon Aug 16 20:50:12 2021
 
 @author: karl
 """
+
+import pygame
+from menu_utils import createRect,launchGame
+from my_game_utils import mouseInBB
+import glob
+
+songList = glob.glob('*.mid') + glob.glob('*.midi')
+
+
+background_colour = (255,255,255)
+(width, height) = (700, 1000)
+
+rect = pygame.Rect(100,100,200,200)
+screen = pygame.display.set_mode((width, height))
+pygame.display.set_caption('Game')
+screen.fill(background_colour)
+# pygame.draw.rect(screen,(0,0,0),rect)
+pygame.display.flip()
+
+running = True
+
+rect_bb_list=[]
+
+
+ # will need to handle overflow with prev/next buttons later
+for idx,mid_str in enumerate(songList):
+    
+    this_bb=createRect(mid_str,idx,screen)
+
+    rect_bb_list.append(this_bb)
+    
+while running:
+    pygame.display.flip()
+
+    
+   
+    
+    for ev in pygame.event.get():
+            
+        if ev.type==pygame.QUIT:
+            pygame.quit()
+        
+        
+        if ev.type == pygame.MOUSEBUTTONDOWN:
+            
+            mouse = pygame.mouse.get_pos()
+            print(mouse)
+            
+            for idx,bb in enumerate(rect_bb_list):
+                
+                if mouseInBB(mouse,bb):
+                    
+                    this_song_name = songList[idx]
+                    running=False
+                    pygame.quit()
+
+
+
+
+#%% game
+                    
 import mido
 import time
 from collections import deque
@@ -50,7 +111,9 @@ logThis = list()
 
 import copy
 
-mid = mido.MidiFile('Jazz5.mid')
+mid = mido.MidiFile(this_song_name)
+
+write_msg_log = []
 
 all_msg = []
 
@@ -58,11 +121,13 @@ for msg in mid:
     if not msg.is_meta:
         all_msg.append(msg)
 
-num_repeats = 10
+num_repeats = 5
 
 for ii in range(num_repeats):
     
     all_msg += copy.deepcopy(all_msg)
+
+#all_msg = all_msg*5
 
 unique_notes = [msg.note for msg in all_msg]
 
@@ -196,7 +261,7 @@ while len(all_msg)>0:
                 
         
 #                this_msg = {"msg": input_msg, "due": time.time(), "rect": pygame.Rect(this_pos/len(unique_notes)*600+50,y_pos-5,50,10)} 
-                this_msg = {"msg": input_msg, "due": time.time(), "circ": {'horiz':this_pos/len(unique_notes)*600+50}} 
+                this_msg = {"msg": input_msg, "due": time.time(), "circ": {'horiz':this_pos/len(unique_notes)*600+50}, "status":"missed"} 
 
                 msglog_input.append(this_msg)
             
@@ -215,14 +280,18 @@ while len(all_msg)>0:
             mod_this = [val for val in targ_info if abs(val[1])<precision_level_seconds_acceptable]
             
             if mod_this:
+                
+                thisMsg['status'] = mod_this[0][1]
+                
                 if abs(mod_this[0][1])<precision_level_seconds_perfect:
                     msglog[mod_this[0][0]]['hit']='perfect'
                 elif mod_this[0][1]>0:
                     msglog[mod_this[0][0]]['hit']='slow'
                 elif mod_this[0][1]<0:
-                    msglog[mod_this[0][0]]['hit']='fast'
+                    msglog[mod_this[0][0]]['hit']='fast'                
     try:
         while msglog_input[0]["due"]+draw_input_time<time.time():
+            write_msg_log.append(msglog_input[0])
             msglog_input.popleft()
     except:
         pass
@@ -239,3 +308,11 @@ while len(all_msg)>0:
             channel_enabled = toggleChannels(channel_enabled,mouse,button_bb)
             
         
+table_out = []
+        
+            
+for msg in write_msg_log:
+    
+    table_out.append([msg['msg'].note,msg['status']])
+    
+np.save('table_out_test.npy',table_out)
