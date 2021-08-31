@@ -97,8 +97,10 @@ print(mido.get_input_names()) # To list the input ports
 inputs = mido.get_input_names()
 outputs = mido.get_output_names()
 
-inport = mido.open_input(inputs[0])
-outport = mido.open_output(outputs[0])
+drum_dex = [idx for idx,val in enumerate(inputs) if 'Alesis' in val][0]
+
+inport = mido.open_input(inputs[drum_dex])
+outport = mido.open_output(outputs[drum_dex])
 
 msglog = deque()
 echo_delay = 2
