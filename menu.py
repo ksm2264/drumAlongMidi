@@ -110,6 +110,7 @@ logThis = list()
 
 
 #%%
+from post_table import post_data
 
 import copy
 
@@ -263,7 +264,7 @@ while len(all_msg)>0:
                 
         
 #                this_msg = {"msg": input_msg, "due": time.time(), "rect": pygame.Rect(this_pos/len(unique_notes)*600+50,y_pos-5,50,10)} 
-                this_msg = {"msg": input_msg, "due": time.time(), "circ": {'horiz':this_pos/len(unique_notes)*600+50}, "status":"missed"} 
+                this_msg = {"msg": input_msg, "due": time.time(), "circ": {'horiz':this_pos/len(unique_notes)*600+50}, "status":"missed", "timestamp":time.time()} 
 
                 msglog_input.append(this_msg)
             
@@ -302,6 +303,7 @@ while len(all_msg)>0:
         
         if ev.type==pygame.QUIT:
             pygame.quit()
+            post_data()
             
         if ev.type == pygame.MOUSEBUTTONDOWN:
             
@@ -315,6 +317,8 @@ table_out = []
             
 for msg in write_msg_log:
     
-    table_out.append([msg['msg'].note,msg['status']])
+    table_out.append([msg['msg'].note,msg['status'],msg['timestamp'],this_song_name])
     
 np.save('table_out_test.npy',table_out)
+
+
